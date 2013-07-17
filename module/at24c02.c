@@ -39,19 +39,74 @@ struct at24c02_dev *at24c02_devp;
 static int at24c02_open(struct inode *inode,struct file*filp)
 {
     filp->private_data = at24c02_devp;
+    printk("at24c02_open is called\n");
+
+    #if DEBUG
+    printk(KERN_NOTICE"open decvice is called\n");
+    #endif
     return 0;
 }
 
 static ssize_t at24c02_read(struct file *filp, char __user *buf, size_t size,loff_t *ppos)
 {
-    return 0;
+    int i = 0;
+    int transferred = 0;
+    unsigned char ret =0;
+    unsigned char my_buff[512]={0};
+
+    struct at24c02_dev *dev = (struct at24c02_dev *)filp->private_data;
+    dev->current_pointer = *ppos;
+    /*检测adapter是否支持读写功能
+     *start inline int i2c_check_functionality(struct adapter*adp,u32 func)
+    */
+    if(i2c_check_functionality(dev->client->adapter,I2C_FUNC_SMBUS_READ_BYTE_DATA))
+    {
+        while(transferred < size)
+        {
+            /*s32 i2c_smbus_read_byte_data(struct i2c_client *client, u8 command);*/
+            /*将会调用i2c_smbus_xfer*/
+            ret = i2c_smbus_read_byte_data(dev->client,dev->current_pointer +i);
+            my_buff[i++] = (unsigned char) ret;
+            transferred +=1;
+            #if DEBUG
+            printk(KERN_NOTICE"the my_buff[%d] is %x,transferred is %d",i,my_buff[i],transferred);
+            #endif
+
+        }
+        copy_to_user(buf,(void *)my_buff,transferred);
+        dev->current_pointer += transferred;
+    }
+
+    return transferred;
 }
 
 
 
 static ssize_t at24c02_write(struct file *filp, const char __user *buf, size_t size, loff_t *ppos)
 {
-    return 0;
+    int i = 0;
+    int transferred = 0;
+    int ret;
+    unsigned char my_buff[512];
+
+    struct at24c02_dev *dev = (struct at24c02_dev *)filp->private_data;
+    dev->current_pointer = *ppos;
+    if(i2c_check_functionality(dev->client->adapter,I2C_FUNC_SMBUS_BYTE_DATA))
+    {
+        copy_from_user(my_buff,buf,size);
+        while(transferred < size)
+        {
+            ret = i2c_smbus_write_byte_data(dev->client,dev->current_pointer+i,my_buff[i]);
+            #if DEBUG
+            printk(KERN_NOTICE"write data %d-----my_buff%x",i,my_buff[i]);
+            #endif
+
+            i+=1;
+            transferred +=1;
+        }
+        dev->current_pointer +=transferred;
+    }
+    return transferred;
 }
 
 
