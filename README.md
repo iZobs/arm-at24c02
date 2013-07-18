@@ -5,5 +5,5 @@
     (4)document文件夹存放相关的datasheet等文档
         
 使用:
-     git clone 
+    git clone git@gitcafe.com:iZobs/TQ2440-at24c02.git 
 
