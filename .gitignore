@@ -10,8 +10,8 @@
 # Normal rules
 #
 .*
-module/*.o
-module/*.o.*
+/module/*.o
+/module/*.o.*
 *.a
 *.s
 *.ko
@@ -21,7 +21,7 @@ module/*.o.*
 *.i
 *.lst
 *.symtypes
-module/*.order
+/module/*.order
 *.elf
 *.bin
 *.gz
